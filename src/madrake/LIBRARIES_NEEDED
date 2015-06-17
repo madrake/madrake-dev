@@ -1,0 +1,19 @@
+Still Need To Install:
+- AutoValue or an equivalent
+- MoreAsserts / AssertContents / assertList?
+- Truth?
+- Mockito
+- Proto2
+
+Where TDD fails maybe?
+- algorithms
+- future proofing
+
+Should look into Maven and Github
+
+
+Useful Libraries Installed:
+Junit4
+Joda Time + Src
+Guava + Src
+Guice + Src
