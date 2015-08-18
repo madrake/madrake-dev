@@ -6,21 +6,19 @@ import java.util.Set;
 import org.joda.money.BigMoney;
 import org.joda.time.Instant;
 
-import madrake.needsautovalue.Event;
-import madrake.needsautovalue.AcquisitionAdjustment;
-import madrake.needsautovalue.Result;
-import madrake.needsautovalue.StockId;
-
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 
+import madrake.needsautovalue.AcquisitionAdjustment;
+import madrake.needsautovalue.Event;
+import madrake.needsautovalue.Result;
+import madrake.needsautovalue.StockId;
+
 public class StockAccounting {
-  
+
   private final Map<StockId, Result> stockDetails = Maps.newHashMap();
-  
+
   public void sell(Event event) {
     final StockId stockId = event.getStockId();
     Result resultSoFar = fetchFromMapIfPresent(stockId);
@@ -74,17 +72,17 @@ public class StockAccounting {
     }
     Preconditions.checkArgument(gain.isNegative(), "Can't disallow loss on sale that didn't have a loss!");
     Result newResult = resultSoFar.builder()
-        .withAdjustmentToSalePrice(gain.negated()) // we should really just mark losses as disallowed rather than adjust the sales price
+        .withAdjustmentToSalePrice(gain.negated()) // TODO(madrake): we should really just mark losses as disallowed rather than adjust the sales price
         .withRecipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
         .build();
     stockDetails.put(saleToDisallowLoss, newResult);
     return new AcquisitionAdjustment(gain.negated(), acquisitionDate);
-    
+
   }
 
   public void adjustAcquireCostBasis(
-      StockId acquireToAdjustCostBasis, 
-      AcquisitionAdjustment acquisitionAdjustment, 
+      StockId acquireToAdjustCostBasis,
+      AcquisitionAdjustment acquisitionAdjustment,
       StockId disallowedWashSell) {
     // TODO(madrake): can we make sure this isn't null?
     final Result resultSoFar = stockDetails.get(acquireToAdjustCostBasis);
@@ -101,27 +99,16 @@ public class StockAccounting {
     return FluentIterable.from(stockDetails.values())
         .transform(new NonNullAdjustments())
         .transform(new AddReportableGain())
-        .toSortedList(new ResultEventIdComparator());
-  }
-  
-  public Set<StockId> getStocksSoldAtLoss() {
-    return FluentIterable.from(stockDetails.values())
-        .filter(new StockWasSold())
-        .transform(new NonNullAdjustments())
-        .transform(new AddReportableGain())
-        .filter(new Predicate<Result>() {
-          @Override
-          public boolean apply(Result arg0) {
-            return arg0.getReportableGain().isNegative();
-          }
-        })
-        .transform(new Function<Result, StockId>() {
-          @Override
-          public StockId apply(Result arg0) {
-            return arg0.getStockId();
-          }
-        })
-        .toSet();
+        .toSortedList((Result a0, Result a1) -> a0.getStockId().compareTo(a1.getStockId()));
   }
 
+  public Set<StockId> getStocksSoldAtLoss() {
+    return FluentIterable.from(stockDetails.values())
+        .filter((Result input) -> input.getOriginalSale() != null /* stock was sold */)
+        .transform(new NonNullAdjustments())
+        .transform(new AddReportableGain())
+        .filter((Result arg0) -> arg0.getReportableGain().isNegative())
+        .transform((Result arg0) -> arg0.getStockId())
+        .toSet();
+  }
 }
