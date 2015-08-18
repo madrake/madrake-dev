@@ -127,6 +127,10 @@ public final class Result {
         + "]";
   }
 
+  public static int compareByStockId(Result a0, Result a1) {
+    return a0.getStockId().compareTo(a1.getStockId());
+  }
+
   public Builder builder() {
     return new Builder(
         stockId,

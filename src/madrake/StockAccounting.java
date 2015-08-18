@@ -99,7 +99,7 @@ public class StockAccounting {
     return FluentIterable.from(stockDetails.values())
         .transform(new NonNullAdjustments())
         .transform(new AddReportableGain())
-        .toSortedList((Result a0, Result a1) -> a0.getStockId().compareTo(a1.getStockId()));
+        .toSortedList(Result::compareByStockId);
   }
 
   public Set<StockId> getStocksSoldAtLoss() {
@@ -108,7 +108,7 @@ public class StockAccounting {
         .transform(new NonNullAdjustments())
         .transform(new AddReportableGain())
         .filter((Result arg0) -> arg0.getReportableGain().isNegative())
-        .transform((Result arg0) -> arg0.getStockId())
+        .transform(Result::getStockId)
         .toSet();
   }
 }
