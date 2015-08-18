@@ -1,10 +1,10 @@
 package madrake.needsautovalue;
 
-import madrake.BigMoneys;
-
 import org.joda.money.BigMoney;
 
 import com.google.common.base.Objects;
+
+import madrake.BigMoneys;
 
 // TODO(madrake): Use AutoValue with Builder pattern for this class
 // TODO(madrake): need to define what each field means precisely and whether it can be null
@@ -23,7 +23,7 @@ public final class Result {
   public Result(
       StockId stockId,
       RealizableValue originalAcquisition,
-      AcquisitionAdjustment adjustmentToAcquisition, 
+      AcquisitionAdjustment adjustmentToAcquisition,
       StockId senderOfDisallowedLoss,
       RealizableValue originalSale,
       BigMoney adjustmentToSalePrice,
@@ -76,7 +76,7 @@ public final class Result {
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        stockId, 
+        stockId,
         originalAcquisition,
         adjustmentToAcquisition,
         senderOfDisallowedLoss,
@@ -87,7 +87,7 @@ public final class Result {
   }
 
   //TODO(madrake): for Result we need a more fluently readable equality check
-  
+
   @Override
   public boolean equals(Object obj) {
    // TODO(madrake); I don't think autovalue will work here because of bigdecimal comparison
@@ -108,59 +108,36 @@ public final class Result {
   @Override
   public String toString() {
     // TODO(madrake): make this cleaner
-    return "Result[id=" 
+    return "Result[id="
         + stockId
         + ",acquisition="
         + originalAcquisition
         + ",adjustmentToAcquisition="
         + adjustmentToAcquisition
-        + ",senderOfDisallowedLoss=" 
+        + ",senderOfDisallowedLoss="
         + senderOfDisallowedLoss
-        + ",sale=" 
-        + originalSale 
-        + ",adjustmentToSalePrice=" 
+        + ",sale="
+        + originalSale
+        + ",adjustmentToSalePrice="
         + BigMoneys.priceToString(adjustmentToSalePrice)
         + ",recipientOfDisallowedLoss="
-        + recipientOfDisallowedLoss 
-        + ",reportableGain=" 
+        + recipientOfDisallowedLoss
+        + ",reportableGain="
         + BigMoneys.priceToString(reportableGain)
         + "]";
   }
 
   public Builder builder() {
     return new Builder(
-        stockId, 
-        originalAcquisition,
-        adjustmentToAcquisition, 
-        senderOfDisallowedLoss, 
-        originalSale,
-        adjustmentToSalePrice,
-        recipientOfDisallowedLoss,
-        reportableGain);
-  }
-  
-  // TODO(madrake): remove this, temporary helper for refactoring
-  public static Result result(
-      StockId stockId, 
-      final RealizableValue originalAcquisition,
-      AcquisitionAdjustment adjustmentToAcquisition, 
-      StockId senderOfDisallowedLoss,
-      final RealizableValue originalSale,
-      BigMoney adjustmentToSalePrice,
-      boolean washSaleDisallowed,
-      StockId recipientOfDisallowedLoss, 
-      BigMoney reportableGain) {
-    return new Result(
         stockId,
         originalAcquisition,
         adjustmentToAcquisition,
         senderOfDisallowedLoss,
         originalSale,
-        adjustmentToSalePrice
+        adjustmentToSalePrice,
         washSaleDisallowed,
         recipientOfDisallowedLoss,
         reportableGain);
-    // TODO(madrake): CONTINUE HERE - in the process of converting wash sale disallowed to a boolean
   }
 
   public static final class Builder {
@@ -173,14 +150,15 @@ public final class Result {
     private boolean washSaleDisallowed = false;
     private StockId recipientOfDisallowedLoss = null;
     private BigMoney reportableGain = null;
-    
+
     public Builder(
         StockId stockId,
         RealizableValue originalAcquisition,
-        AcquisitionAdjustment adjustmentToAcquisition, 
+        AcquisitionAdjustment adjustmentToAcquisition,
         StockId senderOfDisallowedLoss,
         RealizableValue originalSale,
-        BigMoney adjustmentToPrice2, 
+        BigMoney adjustmentToPrice2,
+        boolean washSaleDisallowed,
         StockId recipientOfDisallowedLoss,
         BigMoney reportableGain) {
       this.stockId = stockId;
@@ -189,6 +167,7 @@ public final class Result {
       this.senderOfDisallowedLoss = senderOfDisallowedLoss;
       this.originalSale = originalSale;
       this.adjustmentToSalePrice = adjustmentToPrice2;
+      this.washSaleDisallowed = washSaleDisallowed;
       this.recipientOfDisallowedLoss = recipientOfDisallowedLoss;
       this.reportableGain = reportableGain;
     }
@@ -197,7 +176,7 @@ public final class Result {
       this.originalAcquisition = acquisition;
       return this;
     }
-    
+
     public Builder withAdjustmentToAcquisition(AcquisitionAdjustment adjustment) {
       this.adjustmentToAcquisition = adjustment;
       return this;
@@ -207,7 +186,7 @@ public final class Result {
       this.originalSale = sale;
       return this;
     }
-    
+
     public Builder withReportableGain(BigMoney gain) {
       this.reportableGain = gain;
       return this;
@@ -215,29 +194,31 @@ public final class Result {
 
     public Builder withAdjustmentToSalePrice(BigMoney adjustmentToSalePrice) {
       // TODO(madrake): we can just record a boolean that the wash sale is disallowed
+      // TODO(madrake): CONTINUE HERE
       this.adjustmentToSalePrice = adjustmentToSalePrice;
       this.washSaleDisallowed = true;
       return this;
     }
-    
+
     public Builder withRecipientOfDisallowedLoss(StockId stockId) {
       this.recipientOfDisallowedLoss = stockId;
       return this;
     }
-    
+
     public Builder withSenderOfDisallowedLoss(StockId stockId) {
       this.senderOfDisallowedLoss = stockId;
       return this;
     }
-    
+
     public Result build() {
       return new Result(
-        stockId, 
-        originalAcquisition, 
-        adjustmentToAcquisition, 
-        senderOfDisallowedLoss, 
+        stockId,
+        originalAcquisition,
+        adjustmentToAcquisition,
+        senderOfDisallowedLoss,
         originalSale,
         adjustmentToSalePrice,
+        washSaleDisallowed,
         recipientOfDisallowedLoss,
         reportableGain);
     }

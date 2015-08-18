@@ -2,6 +2,8 @@ package madrake;
 
 import java.util.Comparator;
 
+import madrake.needsautovalue.Result;
+
 public class ResultEventIdComparator implements Comparator<Result> {
   
   @Override

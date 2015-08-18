@@ -1,21 +1,21 @@
 package madrake;
 
+import org.joda.time.Duration;
+import org.joda.time.Instant;
+
 import com.google.common.base.Predicate;
 
-class WithinWashSaleWindowPredicate implements Predicate<Sale> {
+class WithinWashSaleWindowPredicate implements Predicate<Instant> {
 
-  private final MattsInstant dateOfWashSaleEvent;
+  private final Instant dateOfWashSaleEvent;
   
-  WithinWashSaleWindowPredicate(MattsInstant dateOfWashSaleEvent) {
+  WithinWashSaleWindowPredicate(Instant dateOfWashSaleEvent) {
     this.dateOfWashSaleEvent = dateOfWashSaleEvent;
   }
 
   @Override
-  public boolean apply(Sale someAcquire) {
-    // TODO(madrake): this is not how we should calculate this!
-    // TODO(madrake): also write unit tests
-    return someAcquire.getDate().isWithinThirtyDaysAtOrAfter(dateOfWashSaleEvent) ||
-        dateOfWashSaleEvent.isWithinThirtyDaysAtOrAfter(someAcquire.getDate());
+  public boolean apply(Instant someAcquire) {
+    return someAcquire.compareTo(dateOfWashSaleEvent.minus(Duration.standardDays(30))) >= 0 &&
+        someAcquire.compareTo(dateOfWashSaleEvent.plus(Duration.standardDays(30))) <= 0;
   }
-
 }

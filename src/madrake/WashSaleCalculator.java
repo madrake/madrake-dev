@@ -4,8 +4,18 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.SortedSet;
 
+import madrake.needsautovalue.Event;
+import madrake.needsautovalue.EventType;
+import madrake.needsautovalue.AcquisitionAdjustment;
+import madrake.needsautovalue.Result;
+import madrake.needsautovalue.StockId;
+
+import org.joda.time.Instant;
+
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
@@ -13,22 +23,28 @@ import com.google.common.collect.Sets;
 public final class WashSaleCalculator {
 
   public Iterable<Result> calculate(
-      Collection<Acquire> acquireEvents,
-      Collection<Sale> saleEvents) {
+      Collection<Event> acquireEvents,
+      Collection<Event> saleEvents) {
     Preconditions.checkNotNull(acquireEvents);
     Preconditions.checkNotNull(saleEvents);
+    for (Event event : acquireEvents) {
+      Preconditions.checkArgument(EventType.ACQUIRE.equals(event.getEventType()));
+    }
+    for (Event event : saleEvents) {
+      Preconditions.checkArgument(EventType.SALE.equals(event.getEventType()));
+    }
     
     final Set<StockId> acquisitionStockIdsSeen = Sets.newHashSet();
     final Set<StockId> saleStockIdsSeen = Sets.newHashSet();
-    for (Acquire event : acquireEvents) {
+    for (Event event : acquireEvents) {
       acquisitionStockIdsSeen.add(event.getStockId());
     }
-    for (Sale event : saleEvents) {
+    for (Event event : saleEvents) {
       saleStockIdsSeen.add(event.getStockId());
     }
     Preconditions.checkArgument(
-        acquisitionStockIdsSeen.equals(saleStockIdsSeen), 
-        "Not a full set of stock acquisition and sale events entered!");
+        acquisitionStockIdsSeen.containsAll(saleStockIdsSeen), 
+        "Stock sold that wasn't acquired!");
     Preconditions.checkArgument(
         acquisitionStockIdsSeen.size() == acquireEvents.size(),
         "Duplicate acquire events!");
@@ -36,11 +52,11 @@ public final class WashSaleCalculator {
         saleStockIdsSeen.size() == saleEvents.size(),
         "Duplicate sale events!");
     
-    SortedSet<Sale> sortedSales = ImmutableSortedSet.copyOf(
+    SortedSet<Event> sortedSales = ImmutableSortedSet.copyOf(
         new InstantComparator(),
         saleEvents);
     
-    SortedSet<Acquire> sortedAcquires = ImmutableSortedSet.copyOf(
+    SortedSet<Event> sortedAcquires = ImmutableSortedSet.copyOf(
         new InstantComparator(),
         acquireEvents);
     
@@ -59,28 +75,44 @@ public final class WashSaleCalculator {
     // TODO(madrake): we don't account for 'replacement stock' right now or the
     // 'first share sold is the first share purchased'
     
-    for (Sale sale : sortedSales) {
+    for (Event sale : sortedSales) {
       accounting.sell(sale);
     }
     
-    for (Acquire acquire : sortedAcquires) {
+    for (Event acquire : sortedAcquires) {
       accounting.acquire(acquire);
     }
     
-    for (Acquire acquire : sortedAcquires) {
-      // TODO(madrake): this is going to be horribly inefficient but for now who cares.
+    for (Event acquire : sortedAcquires) {
+      // This algorithm is horribly inefficient from a big-O standpoint but we can improve on this
+      // later once someone has enough stock sale info that this is actually a performance
+      // problem.
+      
       // Find the first sale before or after the acquisition that, if it exists, triggers
       // a wash sale
-      Optional<Sale> possibleWashSale = FluentIterable.from(sortedSales)
-          .filter(new WithinWashSaleWindowPredicate(acquire.getDate()))
+      Optional<Event> possibleWashSale = FluentIterable.from(sortedSales)
+          .filter(Predicates.compose(
+              new WithinWashSaleWindowPredicate(acquire.getValue().getInstant()), 
+              new Function<Event, Instant>() {
+                @Override
+                public Instant apply(Event input) {
+                  return input.getValue().getInstant();
+                }
+              }))
           .filter(new SoldAtLossPredicate(accounting.getStocksSoldAtLoss()))
           .filter(tracker.notWashedPredicate())
           .first();
       if (possibleWashSale.isPresent()) {
-        Sale sale = possibleWashSale.get();
+        Event sale = possibleWashSale.get();
         tracker.addWashed(sale); // don't use it again
-        AdjustmentToPrice disallowedLoss = accounting.disallowLossOnSale(sale.getStockId(), acquire.getStockId());
-        accounting.adjustAcquireCostBasis(acquire.getStockId(), disallowedLoss, sale.getStockId());
+        AcquisitionAdjustment acquisitionAdjustment = accounting.disallowLossOnSale(
+            sale.getStockId(), 
+            acquire.getStockId());
+        // TODO(madrake): Need to add more unit tests for start date change
+        accounting.adjustAcquireCostBasis(
+            acquire.getStockId(),
+            acquisitionAdjustment,
+            sale.getStockId());
       } else {
         // No wash sale!!! TODO(madrake): maybe we want to log this fact?
       }

@@ -4,7 +4,9 @@ import static org.junit.Assert.*;
 
 import java.util.Set;
 
-import org.joda.time.Instant;
+import madrake.needsautovalue.Event;
+import madrake.needsautovalue.EventType;
+
 import org.junit.Test;
 
 import com.google.common.base.Predicate;
@@ -15,11 +17,11 @@ public class AcquireTriggeredWashSaleTrackerTest {
 
   @Test
   public void testReturnsAllEventsIfNothingWashed() {
-    Sale testEvent1 = new Sale(new MattsInstant(new Instant(1)), null, null);
-    Sale testEvent2 = new Sale(new MattsInstant(new Instant(2)), null, null);
-    Set<Sale> allEvents = ImmutableSet.<Sale>of(testEvent1, testEvent2);
+    Event testEvent1 = new Event(StaticTestHelperMethods.dollarValueAtTime(1), null, EventType.SALE);
+    Event testEvent2 = new Event(StaticTestHelperMethods.dollarValueAtTime(2), null, EventType.SALE);
+    Set<Event> allEvents = ImmutableSet.<Event>of(testEvent1, testEvent2);
     WashSaleTracker tracker = new WashSaleTracker();
-    Predicate<Sale> filter = tracker.notWashedPredicate();
+    Predicate<Event> filter = tracker.notWashedPredicate();
     int numUnfilteredEvents = FluentIterable.from(allEvents)
         .filter(filter)
         .size();
@@ -28,21 +30,21 @@ public class AcquireTriggeredWashSaleTrackerTest {
   
   @Test
   public void testDoesntReturnWashedEvent() {
-    Sale testEvent1 = new Sale(new MattsInstant(new Instant(1)), null, null);
-    Sale testEvent2 = new Sale(new MattsInstant(new Instant(2)), null, null);
-    Set<Sale> allEvents = ImmutableSet.<Sale>of(testEvent1, testEvent2);
+    Event testEvent1 = new Event(StaticTestHelperMethods.dollarValueAtTime(1), null, EventType.SALE);
+    Event testEvent2 = new Event(StaticTestHelperMethods.dollarValueAtTime(2), null, EventType.SALE);
+    Set<Event> allEvents = ImmutableSet.<Event>of(testEvent1, testEvent2);
     WashSaleTracker tracker = new WashSaleTracker();
     tracker.addWashed(testEvent2);
-    Predicate<Sale> filter = tracker.notWashedPredicate();
+    Predicate<Event> filter = tracker.notWashedPredicate();
     int numUnfilteredEvents = FluentIterable.from(allEvents)
         .filter(filter)
         .size();
     assertEquals(numUnfilteredEvents, 1);
   }
-  
+
   @Test
   public void testCantWashEventTwice() {
-    Sale testEvent1 = new Sale(null, null, null);
+    Event testEvent1 = new Event(null, null, EventType.SALE);
     WashSaleTracker tracker = new WashSaleTracker();
     tracker.addWashed(testEvent1);
     try {

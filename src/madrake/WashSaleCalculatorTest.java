@@ -1,7 +1,8 @@
 package madrake;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import org.joda.time.Instant;
@@ -9,20 +10,27 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
+import madrake.needsautovalue.AcquisitionAdjustment;
+import madrake.needsautovalue.Event;
+import madrake.needsautovalue.EventType;
+import madrake.needsautovalue.RealizableValue;
+import madrake.needsautovalue.Result;
+import madrake.needsautovalue.StockId;
+
 public class WashSaleCalculatorTest {
 
-  private static final MattsInstant INSTANT_1000 = new MattsInstant(new Instant(1000));
-  private static final MattsInstant INSTANT_1003 = new MattsInstant(new Instant(1003));
-  private static final MattsInstant INSTANT_1004 = new MattsInstant(new Instant(1004));
-  private static final MattsInstant INSTANT_1005 = new MattsInstant(new Instant(1005));
-  private static final MattsInstant INSTANT_1010 = new MattsInstant(new Instant(1010));
-  private static final MattsInstant INSTANT_1011 = new MattsInstant(new Instant(1011));
-  private static final MattsInstant INSTANT_1013 = new MattsInstant(new Instant(1013));
-  private static final MattsInstant INSTANT_1015 = new MattsInstant(new Instant(1015));
-  private static final MattsInstant INSTANT_2000 = new MattsInstant(new Instant(2000));
-  
+  private static final Instant INSTANT_1000 = Instant.parse("2012-10-01");
+  private static final Instant INSTANT_1003 = Instant.parse("2012-11-03");
+  private static final Instant INSTANT_1004 = Instant.parse("2012-11-15");
+  private static final Instant INSTANT_1005 = Instant.parse("2012-12-03");
+  private static final Instant INSTANT_1010 = Instant.parse("2013-04-01");
+  private static final Instant INSTANT_1011 = Instant.parse("2013-04-30");
+  private static final Instant INSTANT_1013 = Instant.parse("2013-06-02");
+  private static final Instant INSTANT_1015 = Instant.parse("2013-08-03");
+  private static final Instant INSTANT_2000 = Instant.parse("2015-10-10");
+
   // TODO(madrake): change code so that the holding period changes as well
-  
+
   @Test
   public void testSanityCheckInputWhenMissingStockAcquisition() {
     WashSaleCalculator calculator = new WashSaleCalculator();
@@ -30,351 +38,430 @@ public class WashSaleCalculatorTest {
     final StockId stockId2 = new StockId(2);
     final StockId stockId3 = new StockId(3);
     try {
-      calculator.calculate( 
+      calculator.calculate(
           ImmutableList.of(
-              new Acquire(INSTANT_1000, new Price(100), stockId1),
-              new Acquire(INSTANT_1005, new Price(110), stockId2)),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
           ImmutableList.of(
-              new Sale(INSTANT_1004, new Price(40), stockId1),
-              new Sale(INSTANT_1010, new Price(200), stockId3)));
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId3, EventType.SALE)));
       fail("Expected an error because of invalid input - stock3 sold but "
           + "not acquired and stock2 acquired but not sold");
     } catch (IllegalArgumentException expected) { /* expected */ }
   }
-  
+
   @Test
   public void testSanityCheckInputWhenDuplicateDataForStockAcquisition() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
     try {
-      calculator.calculate( 
+      calculator.calculate(
           ImmutableList.of(
-              new Acquire(INSTANT_1000, new Price(100), stockId1),
-              new Acquire(INSTANT_1003, new Price(110), stockId1),
-              new Acquire(INSTANT_1005, new Price(110), stockId2)),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1003), stockId1, EventType.ACQUIRE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
           ImmutableList.of(
-              new Sale(INSTANT_1004, new Price(40), stockId1),
-              new Sale(INSTANT_1010, new Price(200), stockId2)));
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
       fail("Expected an error because stock 2 was acquired twice");
     } catch (IllegalArgumentException expected) { /* expected */ }
   }
-  
+
   @Test
   public void testSanityCheckInputWhenDuplicateDataForStockSale() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
     try {
-      calculator.calculate( 
+      calculator.calculate(
           ImmutableList.of(
-              new Acquire(INSTANT_1000, new Price(100), stockId1),
-              new Acquire(INSTANT_1005, new Price(110), stockId2)),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
           ImmutableList.of(
-              new Sale(INSTANT_1004, new Price(40), stockId1),
-              new Sale(INSTANT_1010, new Price(200), stockId2),
-              new Sale(INSTANT_2000, new Price(400), stockId2)));
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE),
+              new Event(new RealizableValue(StaticTestHelperMethods.dollars(400), INSTANT_2000), stockId2, EventType.SALE)));
       fail("Expected an error because stock 2 was sold twice");
     } catch (IllegalArgumentException expected) { /* expected */ }
   }
-  
+
   @Test
   public void testTwoStockCalculationWithWashSale() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
-     // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(100), stockId1),
-            new Acquire(INSTANT_1005, new Price(110), stockId2)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1004, new Price(40), stockId1),
-            new Sale(INSTANT_1010, new Price(200), stockId2)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(100), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1004, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(60), // adjustment to sales price due to a disallowed wash sale
-            stockId2, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(0)
-            ), 
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004),
+        StaticTestHelperMethods.dollars(60),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1005, // acquisition date
-            new Price(110), // true acquisition price
-            new AdjustmentToPrice(60), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId1, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1010, // sale date
-            new Price(200), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(30)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(60), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(30)),
         iterator.next());
   }
-  
+
   @Test
   public void testTwoStockCalculationNoWashSales() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
-     // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(100), stockId1),
-            new Acquire(INSTANT_1010, new Price(110), stockId2)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1010), stockId2, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1004, new Price(40), stockId1),
-            new Sale(INSTANT_1015, new Price(200), stockId2)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1015), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(100), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1004, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(-60)
-            ), 
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(-60)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1010, // acquisition date
-            new Price(110), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1015, // sale date
-            new Price(200), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(90)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1010),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1015),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(90)),
         iterator.next());
   }
-  
+
   @Test
   public void testTwoStockCalculationWithAcquireBeforeSale() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
-     // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(100), stockId1),
-            new Acquire(INSTANT_1004, new Price(110), stockId2)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1004), stockId2, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1005, new Price(40), stockId1),
-            new Sale(INSTANT_1010, new Price(200), stockId2)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1005), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(100), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1005, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(60), // adjustment to sales price due to a disallowed wash sale
-            stockId2, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(0)
-            ), 
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1005),
+        StaticTestHelperMethods.dollars(60),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1004, // acquisition date
-            new Price(110), // true acquisition price
-            new AdjustmentToPrice(60), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId1, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1010, // sale date
-            new Price(200), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(30)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1004),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(60), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(30)),
         iterator.next());
   }
-  
+
   @Test
   public void testTwoStockCalculationWithDifferentValues() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
-     // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(130), stockId1),
-            new Acquire(INSTANT_1005, new Price(110), stockId2)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(130), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1004, new Price(40), stockId1),
-            new Sale(INSTANT_1010, new Price(200), stockId2)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(130), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1004, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(90), // adjustment to sales price due to a disallowed wash sale
-            stockId2, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(0)
-            ), 
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(130), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004),
+        StaticTestHelperMethods.dollars(90),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1005, // acquisition date
-            new Price(110), // true acquisition price
-            new AdjustmentToPrice(90), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId1, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1010, // sale date
-            new Price(200), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(0)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(90), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(200), INSTANT_1010),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
   }
-  
+
   @Test
   public void testTwoWashSalesAccumulateInThirdSale() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
     final StockId stockId3 = new StockId(3);
-    // TODO(madrake): need to support the date changes
-    // TODO(madrake): need to support not selling all stock
-    // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(100), stockId1),
-            new Acquire(INSTANT_1005, new Price(60), stockId2),
-            new Acquire(INSTANT_1011, new Price(45), stockId3)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1005), stockId2, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1011), stockId3, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1004, new Price(50), stockId1),
-            new Sale(INSTANT_1010, new Price(40), stockId2),
-            new Sale(INSTANT_1013, new Price(46), stockId3)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1004), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1010), stockId2, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(46), INSTANT_1013), stockId3, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(100), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1004, // sale date
-            new Price(50), // true sales price
-            new AdjustmentToPrice(50), // adjustment to sales price due to a disallowed wash sale
-            stockId2, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(0)
-            ),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1004),
+        StaticTestHelperMethods.dollars(50),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1005, // acquisition date
-            new Price(60), // true acquisition price
-            new AdjustmentToPrice(50), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId1, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1010, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(70), // adjustment to sales price due to a disallowed wash sale
-            stockId3,
-            new ReportableGain(0)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1005),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(50), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1010),
+        StaticTestHelperMethods.dollars(70),
+        true,
+        stockId3,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId3, 
-            INSTANT_1011, // acquisition date
-            new Price(45), // true acquisition price
-            new AdjustmentToPrice(70), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId2, // stockId2 here was the stock where the loss was disallowed
-            INSTANT_1013, // sale date
-            new Price(46), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(-69)), 
+        stockId3,
+        new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1011),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(70), INSTANT_1000),
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(46), INSTANT_1013),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(-69)),
         iterator.next());
   }
-  
+
   @Test
   public void testTwoWashSalesAccumulateInThirdSaleWithAcquiresBeforeSales() {
     WashSaleCalculator calculator = new WashSaleCalculator();
     final StockId stockId1 = new StockId(1);
     final StockId stockId2 = new StockId(2);
     final StockId stockId3 = new StockId(3);
-    // TODO(madrake): need to support the date changes
-    // TODO(madrake): need to support not selling all stock
-    // TODO(madrake): force this to dollars?
     Iterable<Result> results = calculator.calculate(
         ImmutableList.of(
-            new Acquire(INSTANT_1000, new Price(100), stockId1),
-            new Acquire(INSTANT_1004, new Price(60), stockId2),
-            new Acquire(INSTANT_1010, new Price(45), stockId3)),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1004), stockId2, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1010), stockId3, EventType.ACQUIRE)),
         ImmutableList.of(
-            new Sale(INSTANT_1005, new Price(50), stockId1),
-            new Sale(INSTANT_1011, new Price(40), stockId2),
-            new Sale(INSTANT_1013, new Price(46), stockId3)));
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1005), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1011), stockId2, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(46), INSTANT_1013), stockId3, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
-    // TODO(madrake): use assert on iterator
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId1, 
-            INSTANT_1000, // acquisition date
-            new Price(100), // true acquisition price
-            new AdjustmentToPrice(0), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            null, // no other stockId here since no wash sale disallowed
-            INSTANT_1005, // sale date
-            new Price(50), // true sales price
-            new AdjustmentToPrice(50), // adjustment to sales price due to a disallowed wash sale
-            stockId2, // stockId2 is the recipient of the disallowed loss
-            new ReportableGain(0)
-            ),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1005),
+        StaticTestHelperMethods.dollars(50),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId2, 
-            INSTANT_1004, // acquisition date
-            new Price(60), // true acquisition price
-            new AdjustmentToPrice(50), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId1, // stockId1 here was the stock where the loss was disallowed
-            INSTANT_1011, // sale date
-            new Price(40), // true sales price
-            new AdjustmentToPrice(70), // adjustment to sales price due to a disallowed wash sale
-            stockId3,
-            new ReportableGain(0)), 
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1004),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(50), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1011),
+        StaticTestHelperMethods.dollars(70),
+        true,
+        stockId3,
+        StaticTestHelperMethods.dollars(0)),
         iterator.next());
-    assertEquals(
+    StaticTestHelperMethods.assertEquals(
         new Result(
-            stockId3, 
-            INSTANT_1010, // acquisition date
-            new Price(45), // true acquisition price
-            new AdjustmentToPrice(70), // adjustment to acquisition price due to a disallowed wash sale*/, 
-            stockId2, // stockId2 here was the stock where the loss was disallowed
-            INSTANT_1013, // sale date
-            new Price(46), // true sales price
-            new AdjustmentToPrice(0), // adjustment to sales price due to a disallowed wash sale
-            null,
-            new ReportableGain(-69)), 
+        stockId3,
+        new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1010),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(70), INSTANT_1000),
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(46), INSTANT_1013),
+        StaticTestHelperMethods.dollars(0),
+        false,
+        null,
+        StaticTestHelperMethods.dollars(-69)),
+        iterator.next());
+  }
+
+  @Test
+  public void testBoughtASingleStock() {
+    WashSaleCalculator calculator = new WashSaleCalculator();
+    final StockId stockId1 = new StockId(1);
+    Iterable<Result> results = calculator.calculate(
+        ImmutableList.of(
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE)),
+        Collections.<Event>emptySet());
+    Iterator<Result> iterator = results.iterator();
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null),
+        iterator.next());
+  }
+
+  @Test
+  public void testTwoStockCalculationWithNotAllStockSoldAtEnd() {
+    WashSaleCalculator calculator = new WashSaleCalculator();
+    final StockId stockId1 = new StockId(1);
+    final StockId stockId2 = new StockId(2);
+    Iterable<Result> results = calculator.calculate(
+        ImmutableList.of(
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005), stockId2, EventType.ACQUIRE)),
+        ImmutableList.of(
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE)));
+    Iterator<Result> iterator = results.iterator();
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1004),
+        StaticTestHelperMethods.dollars(60),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
+        iterator.next());
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(110), INSTANT_1005),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(60), INSTANT_1000),
+        stockId1,
+        null,
+        null,
+        false,
+        null,
+        null),
+        iterator.next());
+  }
+
+
+  @Test
+  public void testTwoWashSalesAccumulateInThirdStockThatIsntSold() {
+    WashSaleCalculator calculator = new WashSaleCalculator();
+    final StockId stockId1 = new StockId(1);
+    final StockId stockId2 = new StockId(2);
+    final StockId stockId3 = new StockId(3);
+    Iterable<Result> results = calculator.calculate(
+        ImmutableList.of(
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000), stockId1, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1004), stockId2, EventType.ACQUIRE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1010), stockId3, EventType.ACQUIRE)),
+        ImmutableList.of(
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1005), stockId1, EventType.SALE),
+            new Event(new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1011), stockId2, EventType.SALE)));
+    Iterator<Result> iterator = results.iterator();
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(100), INSTANT_1000),
+        null,
+        null,
+        new RealizableValue(StaticTestHelperMethods.dollars(50), INSTANT_1005),
+        StaticTestHelperMethods.dollars(50),
+        true,
+        stockId2,
+        StaticTestHelperMethods.dollars(0)),
+        iterator.next());
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId2,
+        new RealizableValue(StaticTestHelperMethods.dollars(60), INSTANT_1004),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(50), INSTANT_1000),
+        stockId1,
+        new RealizableValue(StaticTestHelperMethods.dollars(40), INSTANT_1011),
+        StaticTestHelperMethods.dollars(70),
+        true,
+        stockId3,
+        StaticTestHelperMethods.dollars(0)),
+        iterator.next());
+    StaticTestHelperMethods.assertEquals(
+        new Result(
+        stockId3,
+        new RealizableValue(StaticTestHelperMethods.dollars(45), INSTANT_1010),
+        new AcquisitionAdjustment(StaticTestHelperMethods.dollars(70), INSTANT_1000),
+        stockId2,
+        null,
+        null,
+        false,
+        null,
+        null),
         iterator.next());
   }
 }

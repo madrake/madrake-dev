@@ -2,9 +2,14 @@ package madrake;
 
 import java.util.Set;
 
+import madrake.needsautovalue.Event;
+import madrake.needsautovalue.EventType;
+import madrake.needsautovalue.StockId;
+
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
-public class SoldAtLossPredicate implements Predicate<Sale> {
+public class SoldAtLossPredicate implements Predicate<Event> {
   
   private final Set<StockId> lossStocks;
   
@@ -13,7 +18,9 @@ public class SoldAtLossPredicate implements Predicate<Sale> {
   }
 
   @Override
-  public boolean apply(Sale sale) {
+  public boolean apply(Event sale) {
+    Preconditions.checkArgument(EventType.SALE.equals(sale.getEventType()), 
+        "Should only work on Sale events");
     return lossStocks.contains(sale.getStockId());
   }
 }
