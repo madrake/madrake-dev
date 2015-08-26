@@ -2,9 +2,6 @@ package madrake;
 
 import java.util.Set;
 
-import madrake.needsautovalue.Event;
-import madrake.needsautovalue.EventType;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;

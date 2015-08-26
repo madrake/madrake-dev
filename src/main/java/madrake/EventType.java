@@ -1,4 +1,4 @@
-package madrake.needsautovalue;
+package madrake;
 
 public enum EventType {
   ACQUIRE,

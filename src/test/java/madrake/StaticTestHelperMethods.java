@@ -1,6 +1,5 @@
 package madrake;
 
-import madrake.needsautovalue.RealizableValue;
 import madrake.needsautovalue.Result;
 
 import org.joda.money.BigMoney;
@@ -31,6 +30,6 @@ final class StaticTestHelperMethods {
   }
 
   public static RealizableValue value(final int timestamp, final int dollars) {
-    return new RealizableValue(dollars(dollars), new Instant(timestamp));
+    return RealizableValue.create(dollars(dollars), new Instant(timestamp));
   }
 }

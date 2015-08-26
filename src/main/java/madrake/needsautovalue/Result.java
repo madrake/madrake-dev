@@ -4,7 +4,10 @@ import org.joda.money.BigMoney;
 
 import com.google.common.base.Objects;
 
+import madrake.AcquisitionAdjustment;
 import madrake.BigMoneys;
+import madrake.RealizableValue;
+import madrake.StockId;
 
 // TODO(madrake): Use AutoValue with Builder pattern for this class
 // TODO(madrake): need to define what each field means precisely and whether it can be null

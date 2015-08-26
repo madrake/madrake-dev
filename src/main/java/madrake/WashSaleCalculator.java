@@ -15,11 +15,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 
-import madrake.needsautovalue.AcquisitionAdjustment;
-import madrake.needsautovalue.Event;
-import madrake.needsautovalue.EventType;
 import madrake.needsautovalue.Result;
-import madrake.needsautovalue.StockId;
 
 public final class WashSaleCalculator {
 

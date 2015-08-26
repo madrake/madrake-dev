@@ -2,7 +2,6 @@ package madrake;
 
 import org.joda.money.BigMoney;
 
-import madrake.needsautovalue.AcquisitionAdjustment;
 import madrake.needsautovalue.Result;
 
 import com.google.common.base.Function;

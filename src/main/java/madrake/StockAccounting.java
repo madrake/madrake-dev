@@ -10,10 +10,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 
-import madrake.needsautovalue.AcquisitionAdjustment;
-import madrake.needsautovalue.Event;
 import madrake.needsautovalue.Result;
-import madrake.needsautovalue.StockId;
 
 public class StockAccounting {
 
@@ -76,7 +73,7 @@ public class StockAccounting {
         .withRecipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
         .build();
     stockDetails.put(saleToDisallowLoss, newResult);
-    return new AcquisitionAdjustment(gain.negated(), acquisitionDate);
+    return AcquisitionAdjustment.create(gain.negated(), acquisitionDate);
 
   }
 

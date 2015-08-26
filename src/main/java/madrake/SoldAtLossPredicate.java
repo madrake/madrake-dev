@@ -2,10 +2,6 @@ package madrake;
 
 import java.util.Set;
 
-import madrake.needsautovalue.Event;
-import madrake.needsautovalue.EventType;
-import madrake.needsautovalue.StockId;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 

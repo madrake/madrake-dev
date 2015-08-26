@@ -4,9 +4,6 @@ import static org.junit.Assert.*;
 
 import java.util.Set;
 
-import madrake.needsautovalue.Event;
-import madrake.needsautovalue.EventType;
-
 import org.junit.Test;
 
 import com.google.common.base.Predicate;
@@ -17,8 +14,8 @@ public class AcquireTriggeredWashSaleTrackerTest {
 
   @Test
   public void testReturnsAllEventsIfNothingWashed() {
-    Event testEvent1 = new Event(StaticTestHelperMethods.dollarValueAtTime(1), null, EventType.SALE);
-    Event testEvent2 = new Event(StaticTestHelperMethods.dollarValueAtTime(2), null, EventType.SALE);
+    Event testEvent1 = Event.create(StaticTestHelperMethods.dollarValueAtTime(1), StockId.create(1), EventType.SALE);
+    Event testEvent2 = Event.create(StaticTestHelperMethods.dollarValueAtTime(2), StockId.create(1), EventType.SALE);
     Set<Event> allEvents = ImmutableSet.<Event>of(testEvent1, testEvent2);
     WashSaleTracker tracker = new WashSaleTracker();
     Predicate<Event> filter = tracker.notWashedPredicate();
@@ -30,8 +27,8 @@ public class AcquireTriggeredWashSaleTrackerTest {
   
   @Test
   public void testDoesntReturnWashedEvent() {
-    Event testEvent1 = new Event(StaticTestHelperMethods.dollarValueAtTime(1), null, EventType.SALE);
-    Event testEvent2 = new Event(StaticTestHelperMethods.dollarValueAtTime(2), null, EventType.SALE);
+    Event testEvent1 = Event.create(StaticTestHelperMethods.dollarValueAtTime(1), StockId.create(1), EventType.SALE);
+    Event testEvent2 = Event.create(StaticTestHelperMethods.dollarValueAtTime(2), StockId.create(2), EventType.SALE);
     Set<Event> allEvents = ImmutableSet.<Event>of(testEvent1, testEvent2);
     WashSaleTracker tracker = new WashSaleTracker();
     tracker.addWashed(testEvent2);
@@ -44,7 +41,7 @@ public class AcquireTriggeredWashSaleTrackerTest {
 
   @Test
   public void testCantWashEventTwice() {
-    Event testEvent1 = new Event(null, null, EventType.SALE);
+    Event testEvent1 = Event.create(StaticTestHelperMethods.dollarValueAtTime(1), StockId.create(1), EventType.SALE);
     WashSaleTracker tracker = new WashSaleTracker();
     tracker.addWashed(testEvent1);
     try {
