@@ -20,7 +20,7 @@ public class StockAccounting {
     final StockId stockId = event.getStockId();
     Result resultSoFar = fetchFromMapIfPresent(stockId);
     Preconditions.checkArgument(resultSoFar.getOriginalSale() == null);
-    Preconditions.checkArgument(resultSoFar.getAdjustmentToSalePrice() == null);
+    Preconditions.checkArgument(!resultSoFar.getWashSaleDisallowed());
     Result newResult = resultSoFar.builder()
         .withSale(event.getValue())
         .build();
@@ -46,7 +46,7 @@ public class StockAccounting {
       return result;
     } else {
       // TODO(madrake): this is weird that we construct a null here
-      return new Result(stockId, null, null, null, null, null, false, null, null);
+      return new Result(stockId, null, null, null, null, false, null, null);
     }
   }
 
@@ -54,7 +54,7 @@ public class StockAccounting {
     // TODO(madrake): can we make sure this isn't null?
     final Result resultSoFar = stockDetails.get(saleToDisallowLoss);
     Preconditions.checkNotNull(resultSoFar.getOriginalSale());
-    Preconditions.checkArgument(resultSoFar.getAdjustmentToSalePrice() == null);
+    Preconditions.checkArgument(!resultSoFar.getWashSaleDisallowed());
     Preconditions.checkArgument(resultSoFar.getRecipientOfDisallowedLoss() == null);
     // TODO(madrake): this calculation needs to take into account the acquisition price!
     // It also duplicates logic elsewhere
@@ -69,7 +69,7 @@ public class StockAccounting {
     }
     Preconditions.checkArgument(gain.isNegative(), "Can't disallow loss on sale that didn't have a loss!");
     Result newResult = resultSoFar.builder()
-        .withAdjustmentToSalePrice(gain.negated()) // TODO(madrake): we should really just mark losses as disallowed rather than adjust the sales price
+        .withWashSaleDisallowed()
         .withRecipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
         .build();
     stockDetails.put(saleToDisallowLoss, newResult);
@@ -94,7 +94,6 @@ public class StockAccounting {
 
   public Iterable<Result> getResults() { // TODO(madrake): in sorted order in name
     return FluentIterable.from(stockDetails.values())
-        .transform(new NonNullAdjustments())
         .transform(new AddReportableGain())
         .toSortedList(Result::compareByStockId);
   }
@@ -102,7 +101,6 @@ public class StockAccounting {
   public Set<StockId> getStocksSoldAtLoss() {
     return FluentIterable.from(stockDetails.values())
         .filter((Result input) -> input.getOriginalSale() != null /* stock was sold */)
-        .transform(new NonNullAdjustments())
         .transform(new AddReportableGain())
         .filter((Result arg0) -> arg0.getReportableGain().isNegative())
         .transform(Result::getStockId)

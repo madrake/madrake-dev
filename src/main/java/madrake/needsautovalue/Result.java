@@ -18,7 +18,6 @@ public final class Result {
   private final AcquisitionAdjustment adjustmentToAcquisition;
   private final StockId senderOfDisallowedLoss;
   private final RealizableValue originalSale;
-  private final BigMoney adjustmentToSalePrice;
   private final boolean washSaleDisallowed;
   private final StockId recipientOfDisallowedLoss;
   private final BigMoney reportableGain;
@@ -29,7 +28,6 @@ public final class Result {
       AcquisitionAdjustment adjustmentToAcquisition,
       StockId senderOfDisallowedLoss,
       RealizableValue originalSale,
-      BigMoney adjustmentToSalePrice,
       boolean washSaleDisallowed,
       StockId recipientOfDisallowedLoss,
       BigMoney reportableGain) {
@@ -38,10 +36,9 @@ public final class Result {
     this.adjustmentToAcquisition = adjustmentToAcquisition;
     this.senderOfDisallowedLoss = senderOfDisallowedLoss;
     this.originalSale = originalSale;
-    this.adjustmentToSalePrice = adjustmentToSalePrice;
+    this.washSaleDisallowed = washSaleDisallowed;
     this.recipientOfDisallowedLoss = recipientOfDisallowedLoss;
     this.reportableGain = reportableGain;
-    this.washSaleDisallowed = washSaleDisallowed;
   }
 
   public StockId getStockId() {
@@ -64,8 +61,9 @@ public final class Result {
     return originalSale;
   }
 
-  public BigMoney getAdjustmentToSalePrice() {
-    return adjustmentToSalePrice;
+  // TODO(madrake): should we flip the semantics around?
+  public boolean getWashSaleDisallowed() {
+    return washSaleDisallowed;
   }
 
   public StockId getRecipientOfDisallowedLoss() {
@@ -84,7 +82,7 @@ public final class Result {
         adjustmentToAcquisition,
         senderOfDisallowedLoss,
         originalSale,
-        adjustmentToSalePrice,
+        washSaleDisallowed,
         recipientOfDisallowedLoss,
         reportableGain);
   }
@@ -101,7 +99,7 @@ public final class Result {
           Objects.equal(this.adjustmentToAcquisition, other.adjustmentToAcquisition) &&
           Objects.equal(this.senderOfDisallowedLoss, other.senderOfDisallowedLoss) &&
           Objects.equal(this.originalSale, other.originalSale) &&
-          BigMoneys.equals(this.adjustmentToSalePrice, other.adjustmentToSalePrice) &&
+          this.washSaleDisallowed == other.washSaleDisallowed &&
           Objects.equal(this.recipientOfDisallowedLoss, other.recipientOfDisallowedLoss) &&
           BigMoneys.equals(this.reportableGain, other.reportableGain);
     }
@@ -121,8 +119,8 @@ public final class Result {
         + senderOfDisallowedLoss
         + ",sale="
         + originalSale
-        + ",adjustmentToSalePrice="
-        + BigMoneys.priceToString(adjustmentToSalePrice)
+        + ",washSaleDisallowed="
+        + washSaleDisallowed
         + ",recipientOfDisallowedLoss="
         + recipientOfDisallowedLoss
         + ",reportableGain="
@@ -141,7 +139,6 @@ public final class Result {
         adjustmentToAcquisition,
         senderOfDisallowedLoss,
         originalSale,
-        adjustmentToSalePrice,
         washSaleDisallowed,
         recipientOfDisallowedLoss,
         reportableGain);
@@ -153,7 +150,6 @@ public final class Result {
     private AcquisitionAdjustment adjustmentToAcquisition = null;
     private StockId senderOfDisallowedLoss = null;
     private RealizableValue originalSale = null;
-    private BigMoney adjustmentToSalePrice = null;
     private boolean washSaleDisallowed = false;
     private StockId recipientOfDisallowedLoss = null;
     private BigMoney reportableGain = null;
@@ -164,7 +160,6 @@ public final class Result {
         AcquisitionAdjustment adjustmentToAcquisition,
         StockId senderOfDisallowedLoss,
         RealizableValue originalSale,
-        BigMoney adjustmentToPrice2,
         boolean washSaleDisallowed,
         StockId recipientOfDisallowedLoss,
         BigMoney reportableGain) {
@@ -173,7 +168,6 @@ public final class Result {
       this.adjustmentToAcquisition = adjustmentToAcquisition;
       this.senderOfDisallowedLoss = senderOfDisallowedLoss;
       this.originalSale = originalSale;
-      this.adjustmentToSalePrice = adjustmentToPrice2;
       this.washSaleDisallowed = washSaleDisallowed;
       this.recipientOfDisallowedLoss = recipientOfDisallowedLoss;
       this.reportableGain = reportableGain;
@@ -199,10 +193,7 @@ public final class Result {
       return this;
     }
 
-    public Builder withAdjustmentToSalePrice(BigMoney adjustmentToSalePrice) {
-      // TODO(madrake): we can just record a boolean that the wash sale is disallowed
-      // TODO(madrake): CONTINUE HERE
-      this.adjustmentToSalePrice = adjustmentToSalePrice;
+    public Builder withWashSaleDisallowed() {
       this.washSaleDisallowed = true;
       return this;
     }
@@ -224,7 +215,6 @@ public final class Result {
         adjustmentToAcquisition,
         senderOfDisallowedLoss,
         originalSale,
-        adjustmentToSalePrice,
         washSaleDisallowed,
         recipientOfDisallowedLoss,
         reportableGain);

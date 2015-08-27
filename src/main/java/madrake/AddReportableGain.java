@@ -1,6 +1,7 @@
 package madrake;
 
 import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
 
 import madrake.needsautovalue.Result;
 
@@ -14,17 +15,19 @@ class AddReportableGain implements Function<Result, Result> {
       // Stock hasn't been sold yet!
       return in;
     } else {
+      if (in.getWashSaleDisallowed()) {
+        // If the sale was disallowed as a wash sale there can't be any reportable gain by definition
+        return in.builder().withReportableGain(BigMoney.zero(CurrencyUnit.USD)).build();
+      }
       // TODO(madrake): this is one of the areas where we have reusable code
       BigMoney reportableGain = in.getOriginalSale().getValue()
-          .plus(in.getAdjustmentToSalePrice())
           .minus(in.getOriginalAcquisition().getValue());
       final AcquisitionAdjustment acquisitionAdjustment = in.getAdjustmentToAcquisition();
       if (acquisitionAdjustment != null) {
         reportableGain = reportableGain.minus(acquisitionAdjustment.getGain());
       }
       return in.builder()
-          .withReportableGain(
-              reportableGain)
+          .withReportableGain(reportableGain)
           .build();
     }
   }
