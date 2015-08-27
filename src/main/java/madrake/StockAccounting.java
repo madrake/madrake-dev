@@ -10,7 +10,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 
-import madrake.needsautovalue.Result;
+import madrake.Result.Builder;
 
 public class StockAccounting {
 
@@ -21,8 +21,8 @@ public class StockAccounting {
     Result resultSoFar = fetchFromMapIfPresent(stockId);
     Preconditions.checkArgument(resultSoFar.getOriginalSale() == null);
     Preconditions.checkArgument(!resultSoFar.getWashSaleDisallowed());
-    Result newResult = resultSoFar.builder()
-        .withSale(event.getValue())
+    Result newResult = Builder.from(resultSoFar)
+        .originalSale(event.getValue())
         .build();
     stockDetails.put(stockId, newResult);
   }
@@ -33,8 +33,8 @@ public class StockAccounting {
     // TODO(madrake): this shouldn't be preconditions, what should it be? here and elsewhere
     Preconditions.checkArgument(resultSoFar.getOriginalAcquisition() == null);
     Preconditions.checkArgument(resultSoFar.getAdjustmentToAcquisition() == null);
-    Result newResult = resultSoFar.builder()
-        .withAcquisition(event.getValue())
+    Result newResult = Builder.from(resultSoFar)
+        .originalAcquisition(event.getValue())
         .build();
     stockDetails.put(stockId, newResult);
   }
@@ -45,8 +45,10 @@ public class StockAccounting {
       Preconditions.checkArgument(result.getStockId().equals(stockId));
       return result;
     } else {
-      // TODO(madrake): this is weird that we construct a null here
-      return new Result(stockId, null, null, null, null, false, null, null);
+      // TODO(madrake): this is a bit odd how we construct an 'empty' entry here
+      return Result.builder().stockId(stockId)
+          .washSaleDisallowed(false)
+          .build();
     }
   }
 
@@ -68,9 +70,9 @@ public class StockAccounting {
       acquisitionDate = resultSoFar.getOriginalAcquisition().getInstant();
     }
     Preconditions.checkArgument(gain.isNegative(), "Can't disallow loss on sale that didn't have a loss!");
-    Result newResult = resultSoFar.builder()
-        .withWashSaleDisallowed()
-        .withRecipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
+    Result newResult = Builder.from(resultSoFar)
+        .washSaleDisallowed(true)
+        .recipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
         .build();
     stockDetails.put(saleToDisallowLoss, newResult);
     return AcquisitionAdjustment.create(gain.negated(), acquisitionDate);
@@ -85,9 +87,9 @@ public class StockAccounting {
     final Result resultSoFar = stockDetails.get(acquireToAdjustCostBasis);
     Preconditions.checkNotNull(resultSoFar.getOriginalAcquisition());
     Preconditions.checkArgument(resultSoFar.getAdjustmentToAcquisition() == null);
-    Result newResult = resultSoFar.builder()
-        .withAdjustmentToAcquisition(acquisitionAdjustment)
-        .withSenderOfDisallowedLoss(disallowedWashSell)
+    Result newResult = Builder.from(resultSoFar)
+        .adjustmentToAcquisition(acquisitionAdjustment)
+        .senderOfDisallowedLoss(disallowedWashSell)
         .build();
     stockDetails.put(acquireToAdjustCostBasis, newResult);
   }

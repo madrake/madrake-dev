@@ -15,8 +15,6 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 
-import madrake.needsautovalue.Result;
-
 public final class WashSaleCalculator {
 
   public Iterable<Result> calculate(

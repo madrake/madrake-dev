@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
-import madrake.needsautovalue.Result;
+//TODO(madrake): need to fix indentation in this class everywhere and maybe make some more helper methods.
 
 public class WashSaleCalculatorTest {
 
@@ -95,7 +95,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -106,7 +106,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(110), INSTANT_1005),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(60), INSTANT_1000),
@@ -132,7 +132,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(200), INSTANT_1015), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -143,7 +143,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(-60)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(110), INSTANT_1010),
         null,
@@ -169,7 +169,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -180,7 +180,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(110), INSTANT_1004),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(60), INSTANT_1000),
@@ -206,7 +206,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(200), INSTANT_1010), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(130), INSTANT_1000),
         null,
@@ -217,7 +217,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(110), INSTANT_1005),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(90), INSTANT_1000),
@@ -246,7 +246,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(46), INSTANT_1013), stockId3, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -257,7 +257,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(60), INSTANT_1005),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(50), INSTANT_1000),
@@ -268,7 +268,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId3,
         RealizableValue.create(StaticTestHelperMethods.dollars(45), INSTANT_1011),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(70), INSTANT_1000),
@@ -297,7 +297,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(46), INSTANT_1013), stockId3, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -308,7 +308,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(60), INSTANT_1004),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(50), INSTANT_1000),
@@ -319,7 +319,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId3,
         RealizableValue.create(StaticTestHelperMethods.dollars(45), INSTANT_1010),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(70), INSTANT_1000),
@@ -341,7 +341,7 @@ public class WashSaleCalculatorTest {
         Collections.<Event>emptySet());
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -366,7 +366,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(40), INSTANT_1004), stockId1, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
            stockId1,
            RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
            null,
@@ -377,7 +377,7 @@ public class WashSaleCalculatorTest {
            StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
             stockId2,
             RealizableValue.create(StaticTestHelperMethods.dollars(110), INSTANT_1005),
             AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(60), INSTANT_1000),
@@ -406,7 +406,7 @@ public class WashSaleCalculatorTest {
             Event.create(RealizableValue.create(StaticTestHelperMethods.dollars(40), INSTANT_1011), stockId2, EventType.SALE)));
     Iterator<Result> iterator = results.iterator();
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId1,
         RealizableValue.create(StaticTestHelperMethods.dollars(100), INSTANT_1000),
         null,
@@ -417,7 +417,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId2,
         RealizableValue.create(StaticTestHelperMethods.dollars(60), INSTANT_1004),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(50), INSTANT_1000),
@@ -428,7 +428,7 @@ public class WashSaleCalculatorTest {
         StaticTestHelperMethods.dollars(0)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
-        new Result(
+        Result.create(
         stockId3,
         RealizableValue.create(StaticTestHelperMethods.dollars(45), INSTANT_1010),
         AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(70), INSTANT_1000),

@@ -1,7 +1,5 @@
 package madrake;
 
-import madrake.needsautovalue.Result;
-
 import org.joda.money.BigMoney;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.Instant;
