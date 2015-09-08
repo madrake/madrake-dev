@@ -20,7 +20,7 @@ public class StockAccounting {
     final StockId stockId = event.getStockId();
     Result resultSoFar = fetchFromMapIfPresent(stockId);
     Preconditions.checkArgument(resultSoFar.getOriginalSale() == null);
-    Preconditions.checkArgument(!resultSoFar.getWashSaleDisallowed());
+    Preconditions.checkArgument(!resultSoFar.getDisallowedLossOnWashSale());
     Result newResult = Builder.from(resultSoFar)
         .originalSale(event.getValue())
         .build();
@@ -45,33 +45,31 @@ public class StockAccounting {
       Preconditions.checkArgument(result.getStockId().equals(stockId));
       return result;
     } else {
-      // TODO(madrake): this is a bit odd how we construct an 'empty' entry here
+      // TODO(madrake): IMPORTANT this is a bit odd how we construct an 'empty' entry here
       return Result.builder().stockId(stockId)
-          .washSaleDisallowed(false)
+          .disallowedLossOnWashSale(false)
           .build();
     }
   }
 
   public AcquisitionAdjustment disallowLossOnSale(StockId saleToDisallowLoss, StockId acquireThatReceivesDisallowedLoss) {
-    // TODO(madrake): can we make sure this isn't null?
-    final Result resultSoFar = stockDetails.get(saleToDisallowLoss);
+    final Result resultSoFar = Preconditions.checkNotNull(
+        stockDetails.get(saleToDisallowLoss),
+        "Expected to fetch a partial result based on stockId " + saleToDisallowLoss + " but no match was found");
     Preconditions.checkNotNull(resultSoFar.getOriginalSale());
-    Preconditions.checkArgument(!resultSoFar.getWashSaleDisallowed());
+    Preconditions.checkArgument(!resultSoFar.getDisallowedLossOnWashSale());
     Preconditions.checkArgument(resultSoFar.getRecipientOfDisallowedLoss() == null);
-    // TODO(madrake): this calculation needs to take into account the acquisition price!
-    // It also duplicates logic elsewhere
+    final AcquisitionAdjustment adjustmentToAcquisition = resultSoFar.getAdjustmentToAcquisition();
+    final Instant acquisitionDate = adjustmentToAcquisition == null ?
+        resultSoFar.getOriginalAcquisition().getInstant() :
+        adjustmentToAcquisition.getInstant();
     BigMoney gain = resultSoFar.getOriginalSale().getValue().minus(resultSoFar.getOriginalAcquisition().getValue());
-    // TODO(madrake): I think we can ignore the null because BigMoney handles this
-    Instant acquisitionDate;
-    if (resultSoFar.getAdjustmentToAcquisition() != null) {
-      gain = gain.minus(resultSoFar.getAdjustmentToAcquisition().getGain());
-      acquisitionDate = resultSoFar.getAdjustmentToAcquisition().getInstant();
-    } else {
-      acquisitionDate = resultSoFar.getOriginalAcquisition().getInstant();
+    if (adjustmentToAcquisition != null) {
+      gain = gain.minus(adjustmentToAcquisition.getGain());
     }
     Preconditions.checkArgument(gain.isNegative(), "Can't disallow loss on sale that didn't have a loss!");
     Result newResult = Builder.from(resultSoFar)
-        .washSaleDisallowed(true)
+        .disallowedLossOnWashSale(true)
         .recipientOfDisallowedLoss(acquireThatReceivesDisallowedLoss)
         .build();
     stockDetails.put(saleToDisallowLoss, newResult);
@@ -83,8 +81,9 @@ public class StockAccounting {
       StockId acquireToAdjustCostBasis,
       AcquisitionAdjustment acquisitionAdjustment,
       StockId disallowedWashSell) {
-    // TODO(madrake): can we make sure this isn't null?
-    final Result resultSoFar = stockDetails.get(acquireToAdjustCostBasis);
+    final Result resultSoFar = Preconditions.checkNotNull(
+        stockDetails.get(acquireToAdjustCostBasis),
+        "Expected to fetch a partial result based on stockId " + acquireToAdjustCostBasis + " but no match was found");
     Preconditions.checkNotNull(resultSoFar.getOriginalAcquisition());
     Preconditions.checkArgument(resultSoFar.getAdjustmentToAcquisition() == null);
     Result newResult = Builder.from(resultSoFar)
@@ -94,7 +93,7 @@ public class StockAccounting {
     stockDetails.put(acquireToAdjustCostBasis, newResult);
   }
 
-  public Iterable<Result> getResults() { // TODO(madrake): in sorted order in name
+  public Iterable<Result> getResultsSortedByStockId() {
     return FluentIterable.from(stockDetails.values())
         .transform(new AddReportableGain())
         .toSortedList(Result::compareByStockId);

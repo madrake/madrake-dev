@@ -6,7 +6,7 @@ import org.joda.money.BigMoney;
 
 import com.google.auto.value.AutoValue;
 
-// TODO(madrake): need to define what each field means precisely and whether it can be null. Right
+// TODO(madrake): IMPORTANT need to define what each field means precisely and whether it can be null. Right
 // now these are all marked as Nullable but I'm not sure that makes sense.
 @AutoValue
 public abstract class Result {
@@ -26,7 +26,7 @@ public abstract class Result {
         .adjustmentToAcquisition(adjustmentToAcquisition)
         .senderOfDisallowedLoss(senderOfDisallowedLoss)
         .originalSale(originalSale)
-        .washSaleDisallowed(washSaleDisallowed)
+        .disallowedLossOnWashSale(washSaleDisallowed)
         .recipientOfDisallowedLoss(recipientOfDisallowedLoss)
         .reportableGain(reportableGain)
         .build();
@@ -37,8 +37,7 @@ public abstract class Result {
   public abstract @Nullable AcquisitionAdjustment getAdjustmentToAcquisition();
   public abstract @Nullable StockId getSenderOfDisallowedLoss();
   public abstract @Nullable RealizableValue getOriginalSale();
-  // TODO(madrake): should we flip the semantics around?
-  public abstract @Nullable boolean getWashSaleDisallowed();
+  public abstract @Nullable boolean getDisallowedLossOnWashSale();
   public abstract @Nullable StockId getRecipientOfDisallowedLoss();
   public abstract @Nullable BigMoney getReportableGain();
 
@@ -48,7 +47,7 @@ public abstract class Result {
 
   public static Builder builder() {
     return new AutoValue_Result.Builder()
-        .washSaleDisallowed(false);
+        .disallowedLossOnWashSale(false);
   }
 
   @AutoValue.Builder
@@ -58,7 +57,7 @@ public abstract class Result {
     public abstract Builder adjustmentToAcquisition(AcquisitionAdjustment adjustment);
     public abstract Builder senderOfDisallowedLoss(StockId stockId);
     public abstract Builder originalSale(RealizableValue sale);
-    public abstract Builder washSaleDisallowed(boolean washSaleDisallowed);
+    public abstract Builder disallowedLossOnWashSale(boolean washSaleDisallowed);
     public abstract Builder recipientOfDisallowedLoss(StockId stockId);
     public abstract Builder reportableGain(BigMoney gain);
     public abstract Result build();
@@ -70,7 +69,7 @@ public abstract class Result {
           .adjustmentToAcquisition(result.getAdjustmentToAcquisition())
           .senderOfDisallowedLoss(result.getSenderOfDisallowedLoss())
           .originalSale(result.getOriginalSale())
-          .washSaleDisallowed(result.getWashSaleDisallowed())
+          .disallowedLossOnWashSale(result.getDisallowedLossOnWashSale())
           .recipientOfDisallowedLoss(result.getRecipientOfDisallowedLoss())
           .reportableGain(result.getReportableGain());
     }

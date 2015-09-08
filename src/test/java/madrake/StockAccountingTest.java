@@ -9,7 +9,7 @@ import java.util.Iterator;
 import org.joda.time.Instant;
 import org.junit.Test;
 
-// TODO(madrake): need to fix indentation in this class everywhere and maybe make some more helper methods.
+// TODO(madrake): would helper methods make this more readable?
 
 // TODO(madrake): everywhere in this test and elsewhere we need to use Truth and then we need
 // to assert on the contents of iterators rather than the ad-hoc way we're doing it right now.
@@ -40,17 +40,17 @@ public class StockAccountingTest {
     StockAccounting accounting = new StockAccounting();
     accounting.acquire(Event.create(StaticTestHelperMethods.value(1, 3), StockId.create(1), EventType.ACQUIRE));
     accounting.sell(Event.create(StaticTestHelperMethods.value(2, 5), StockId.create(1), EventType.SALE));
-    Iterator<Result> iterator = accounting.getResults().iterator();
+    Iterator<Result> iterator = accounting.getResultsSortedByStockId().iterator();
     StaticTestHelperMethods.assertEquals(
         Result.create(
-        StockId.create(1),
-        RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(1)),
-        null,
-        null,
-        RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(2)),
-        false,
-        null,
-        StaticTestHelperMethods.dollars(2)),
+            StockId.create(1),
+            RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(1)),
+            null,
+            null,
+            RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(2)),
+            false,
+            null,
+            StaticTestHelperMethods.dollars(2)),
         iterator.next());
   }
 
@@ -61,28 +61,28 @@ public class StockAccountingTest {
     accounting.sell(Event.create(StaticTestHelperMethods.value(2, 5), StockId.create(1), EventType.SALE));
     accounting.acquire(Event.create(StaticTestHelperMethods.value(3, 7), StockId.create(2), EventType.ACQUIRE));
     accounting.sell(Event.create(StaticTestHelperMethods.value(4, 11), StockId.create(2), EventType.SALE));
-    Iterator<Result> iterator = accounting.getResults().iterator();
+    Iterator<Result> iterator = accounting.getResultsSortedByStockId().iterator();
     StaticTestHelperMethods.assertEquals(
         Result.create(
-        StockId.create(1),
-        RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(1)),
-        null,
-        null,
-        RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(2)),
-        false,
-        null,
-        StaticTestHelperMethods.dollars(2)),
+            StockId.create(1),
+            RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(1)),
+            null,
+            null,
+            RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(2)),
+            false,
+            null,
+            StaticTestHelperMethods.dollars(2)),
         iterator.next());
     StaticTestHelperMethods.assertEquals(
         Result.create(
-        StockId.create(2),
-        RealizableValue.create(StaticTestHelperMethods.dollars(7), new Instant(3)),
-        null,
-        null,
-        RealizableValue.create(StaticTestHelperMethods.dollars(11), new Instant(4)),
-        false,
-        null,
-        StaticTestHelperMethods.dollars(4)),
+            StockId.create(2),
+            RealizableValue.create(StaticTestHelperMethods.dollars(7), new Instant(3)),
+            null,
+            null,
+            RealizableValue.create(StaticTestHelperMethods.dollars(11), new Instant(4)),
+            false,
+            null,
+            StaticTestHelperMethods.dollars(4)),
         iterator.next());
   }
 
@@ -114,20 +114,19 @@ public class StockAccountingTest {
     accounting.acquire(Event.create(StaticTestHelperMethods.value(1, 5), StockId.create(1), EventType.ACQUIRE));
     accounting.sell(Event.create(StaticTestHelperMethods.value(2, 3), StockId.create(1), EventType.SALE));
     accounting.disallowLossOnSale(StockId.create(1), null);
-    Iterator<Result> iterator = accounting.getResults().iterator();
+    Iterator<Result> iterator = accounting.getResultsSortedByStockId().iterator();
     Instant originalAcquisitionDate = new Instant(1);
     Instant originalSaleDate = new Instant(2);
     StaticTestHelperMethods.assertEquals(
         Result.create(
-        StockId.create(1),
-        RealizableValue.create(
-                        StaticTestHelperMethods.dollars(5), originalAcquisitionDate),
-        null,
-        null,
-        RealizableValue.create(StaticTestHelperMethods.dollars(3), originalSaleDate),
-        true,
-        null,
-        StaticTestHelperMethods.dollars(0)),
+            StockId.create(1),
+            RealizableValue.create(StaticTestHelperMethods.dollars(5), originalAcquisitionDate),
+            null,
+            null,
+            RealizableValue.create(StaticTestHelperMethods.dollars(3), originalSaleDate),
+            true,
+            null,
+            StaticTestHelperMethods.dollars(0)),
         iterator.next());
   }
 
@@ -160,18 +159,18 @@ public class StockAccountingTest {
     accounting.acquire(Event.create(StaticTestHelperMethods.value(1, 5), StockId.create(1), EventType.ACQUIRE));
     accounting.adjustAcquireCostBasis(StockId.create(1), AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(2), new Instant(1)), null);
     accounting.sell(Event.create(StaticTestHelperMethods.value(2, 3), StockId.create(1), EventType.SALE));
-    Iterator<Result> iterator = accounting.getResults().iterator();
+    Iterator<Result> iterator = accounting.getResultsSortedByStockId().iterator();
     StaticTestHelperMethods.assertEquals(
         Result.create(
-        StockId.create(1),
-        RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(1)),
-        AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(2), new Instant(1)),
-        null,
-        RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(2)),
-        false,
-        null,
-        StaticTestHelperMethods.dollars(-4)),
-        iterator.next());
+            StockId.create(1),
+            RealizableValue.create(StaticTestHelperMethods.dollars(5), new Instant(1)),
+            AcquisitionAdjustment.create(StaticTestHelperMethods.dollars(2), new Instant(1)),
+            null,
+            RealizableValue.create(StaticTestHelperMethods.dollars(3), new Instant(2)),
+            false,
+            null,
+            StaticTestHelperMethods.dollars(-4)),
+            iterator.next());
   }
 
   @Test

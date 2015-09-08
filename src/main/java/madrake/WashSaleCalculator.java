@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.SortedSet;
 
+import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
 
 import com.google.common.base.Function;
@@ -16,6 +17,12 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
 
 public final class WashSaleCalculator {
+
+  private final DateTimeZone zone;
+
+  public WashSaleCalculator(DateTimeZone zone) {
+    this.zone = zone;
+  }
 
   public Iterable<Result> calculate(
       Collection<Event> acquireEvents,
@@ -70,7 +77,7 @@ public final class WashSaleCalculator {
 
     final StockAccounting accounting = new StockAccounting();
 
-    // TODO(madrake): we don't account for 'replacement stock' right now or the
+    // TODO(madrake): !!IMPORTANT we don't account for 'replacement stock' right now or the
     // 'first share sold is the first share purchased'
 
     for (Event sale : sortedSales) {
@@ -90,7 +97,7 @@ public final class WashSaleCalculator {
       // a wash sale
       Optional<Event> possibleWashSale = FluentIterable.from(sortedSales)
           .filter(Predicates.compose(
-              new WithinWashSaleWindowPredicate(acquire.getValue().getInstant()),
+              WithinWashSaleWindowPredicate.build(acquire.getValue().getInstant(), zone),
               new Function<Event, Instant>() {
                 @Override
                 public Instant apply(Event input) {
@@ -106,16 +113,16 @@ public final class WashSaleCalculator {
         AcquisitionAdjustment acquisitionAdjustment = accounting.disallowLossOnSale(
             sale.getStockId(),
             acquire.getStockId());
-        // TODO(madrake): Need to add more unit tests for start date change
+        // TODO(madrake): IMPORTANT Need to add more unit tests for start date change
         accounting.adjustAcquireCostBasis(
             acquire.getStockId(),
             acquisitionAdjustment,
             sale.getStockId());
       } else {
-        // No wash sale!!! TODO(madrake): maybe we want to log this fact?
+        // No wash sale!!! TODO(madrake): IMPORTANT maybe we want to log this fact?
       }
     }
 
-    return accounting.getResults();
+    return accounting.getResultsSortedByStockId();
   }
 }
